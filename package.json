@@ -2,7 +2,7 @@
   "name": "tic_tac_toe",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://kingd.github.io/tic_tac_toe",
+  "homepage": "https://daimadnan5.github.io/tic_tac_toe",
   "dependencies": {
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.9.1",
