@@ -1,70 +1,78 @@
-# Getting Started with Create React App
+# GRID//NINE
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+An arcade of focused React games. The app includes tic-tac-toe, memory matching, and Connect Four, all reachable from the shared navbar. The tic-tac-toe game includes computer and local multiplayer modes, difficulty settings, score persistence across rounds, undo, winning-cell highlighting, responsive layout, and accessible board controls.
 
-## Available Scripts
+## Run it
 
-In the project directory, you can run:
+```bash
+npm install
+npm start
+```
 
-### `npm start`
+Open `http://localhost:3000` in your browser. For a production bundle:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+npm run build
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The test suite can be run once with:
 
-### `npm test`
+```bash
+npm test -- --watchAll=false --runInBand
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## How it is built
 
-### `npm run build`
+### Component navigation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+`App` owns only the active game id and shared page shell. `Navbar` receives that id plus an `onGameChange` callback, so selecting a game swaps the rendered component without adding a routing dependency. Each game owns its own state and rules, which keeps a change to one game from affecting the others.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 1. The board is data
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The board is a nine-item array. An empty square is `null`, while played squares contain `X` or `O`:
 
-### `npm run eject`
+```js
+['X', null, 'O', null, 'X', null, null, 'O', null]
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+React renders one button for each array item. Clicking a button creates a new array instead of mutating the old one, which gives React a clear state change to render.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 2. One win checker drives tic-tac-toe
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+`getResult(board)` checks the eight possible winning lines. It returns the winner and the winning indexes, or a draw when all nine cells are filled. The same result powers the status message, score update, disabled game state, and highlighted winning cells.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 3. The computer has two personalities
 
-## Learn More
+- **Easy** chooses randomly from the available cells.
+- **Hard** uses the minimax algorithm. It simulates future `O` and `X` moves, scores wins higher than draws, and prefers faster wins or slower losses. This makes the hard opponent unbeatable when it starts from a fair board.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+The computer move is delayed by 430ms so the interface communicates that it is thinking instead of changing instantly.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 4. The other games have local rules
 
-### Code Splitting
+Memory Match creates a shuffled pair deck and tracks two flipped cards before checking for a match. Connect Four stores a six-by-seven grid, drops discs to the lowest open row, and checks four directions after every move.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### 5. React state separates concerns
 
-### Analyzing the Bundle Size
+`App` stores the active board, turn, mode, difficulty, round number, score, move history, and thinking state. Derived values such as `result`, `isGameOver`, and `isAiTurn` are calculated from that state rather than stored separately, which prevents contradictory states.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+The history array stores previous board snapshots. In computer mode, undo removes the player's move and the computer response together, returning control to the player.
 
-### Making a Progressive Web App
+### 6. The visual design is CSS-only
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+`App.css` defines the layout, colors, typography, board interactions, responsive breakpoints, and the subtle paper texture. The desktop view uses a three-column composition; at smaller widths it stacks the board first so the main action remains easy to reach.
 
-### Advanced Configuration
+## Main files
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- `src/App.js` contains the shared shell and active-game navigation state.
+- `src/Components/Navbar.js` renders the game selector.
+- `src/Components/TicTacToeGame.js` contains tic-tac-toe rules, AI, and controls.
+- `src/Components/MemoryMatch.js` contains the matching game state and deck logic.
+- `src/Components/ConnectFour.js` contains the grid, drop logic, and win detection.
+- `src/App.css` contains the shared visual system and responsive layouts.
+- `src/index.css` contains the global reset and base typeface.
+- `src/App.test.js` verifies that the playable board renders with nine accessible cells.
 
-### Deployment
+## Good next extensions
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+The architecture is ready for timed matches, player names, persistent scores with `localStorage`, a larger 4x4 variant, or an online mode backed by a server. The win-line function is the natural place to generalize board dimensions, while the move-selection function is the natural boundary for another AI strategy.
